@@ -42,8 +42,10 @@ type Map struct {
 func (m *Map) List() map[string]string {
 	tags := make(map[string]string)
 
-	for k, v := range m.m {
-		tags[k.name] = v.value
+	if m != nil && m.m != nil {
+		for k, v := range m.m {
+			tags[k.name] = v.value
+		}
 	}
 
 	return tags
