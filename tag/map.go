@@ -39,6 +39,16 @@ type Map struct {
 	m map[Key]tagContent
 }
 
+func (m *Map) List() map[string]string {
+	tags := make(map[string]string)
+
+	for k, v := range m.m {
+		tags[k.name] = v.value
+	}
+
+	return tags
+}
+
 // Value returns the value for the key if a value for the key exists.
 func (m *Map) Value(k Key) (string, bool) {
 	if m == nil {

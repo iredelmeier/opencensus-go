@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"go.opencensus.io/internal"
+	"go.opencensus.io/tag"
 	"go.opencensus.io/trace/tracestate"
 )
 
@@ -176,7 +177,8 @@ func StartSpan(ctx context.Context, name string, o ...StartOption) (context.Cont
 	for _, op := range o {
 		op(&opts)
 	}
-	span := startSpanInternal(name, parent != SpanContext{}, parent, false, opts)
+	tags := tag.FromContext(ctx)
+	span := startSpanInternal(name, parent != SpanContext{}, parent, false, tags, opts)
 
 	ctx, end := startExecutionTracerTask(ctx, name)
 	span.executionTracerTaskEnd = end
@@ -195,13 +197,14 @@ func StartSpanWithRemoteParent(ctx context.Context, name string, parent SpanCont
 	for _, op := range o {
 		op(&opts)
 	}
-	span := startSpanInternal(name, parent != SpanContext{}, parent, true, opts)
+	tags := tag.FromContext(ctx)
+	span := startSpanInternal(name, parent != SpanContext{}, parent, true, tags, opts)
 	ctx, end := startExecutionTracerTask(ctx, name)
 	span.executionTracerTaskEnd = end
 	return NewContext(ctx, span), span
 }
 
-func startSpanInternal(name string, hasParent bool, parent SpanContext, remoteParent bool, o StartOptions) *Span {
+func startSpanInternal(name string, hasParent bool, parent SpanContext, remoteParent bool, tags *tag.Map, o StartOptions) *Span {
 	span := &Span{}
 	span.spanContext = parent
 
@@ -257,6 +260,15 @@ func startSpanInternal(name string, hasParent bool, parent SpanContext, remotePa
 			ss.add(span)
 		}
 	}
+
+	t := tags.List()
+	attributes := make([]Attribute, 0, len(t))
+
+	for k, v := range t {
+		attributes = append(attributes, StringAttribute(k, v))
+	}
+
+	span.AddAttributes(attributes...)
 
 	return span
 }
